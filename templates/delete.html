@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block container_content %}
+<div class="container">
+  <form class="form-signin" method="post">
+    <h2 class="form-signin-heading">Delete {{ hack_name }} data</h2>
+    <input type="password" class="input-block-level" placeholder="Password" name="password">
+    <button type="submit" class="btn btn-large btn-primary">Delete</button>
+    <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
+  </form>
+</div>
+{% endblock %}

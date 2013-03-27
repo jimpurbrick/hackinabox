@@ -7,7 +7,7 @@ import redis
 import json
 import os
 
-DEBUG = True #True if 'DEBUG' in os.environ else False
+DEBUG = True if 'DEBUG' in os.environ else False
 FACEBOOK_APP_ID = os.environ['FACEBOOK_APP_ID']
 FACEBOOK_APP_SECRET = os.environ['FACEBOOK_APP_SECRET']
 HACK_NAME = os.environ['HACK_NAME']
@@ -36,11 +36,14 @@ facebook = oauth.remote_app('facebook',
 
 @app.route('/')
 def index():
-    return render_template('tos.html', hack_name=HACK_NAME)
+    return redirect(url_for('tos'))
 
-
-@app.route('/tos', methods=['POST'])
+@app.route('/tos', methods=['GET', 'POST'])
 def tos():
+
+    if request.method == 'GET':
+        return render_template('tos.html', hack_name=HACK_NAME)
+
     ingress = 'ingress' in request.form and request.form['ingress'] == 'on'
     egress = 'egress' in request.form and request.form['egress'] == 'on'
     if ingress:
@@ -80,15 +83,15 @@ def ingress(resp):
 @app.route('/egress')
 def egress():
 
-    store = redis.StrictRedis.from_url(MYREDIS_URL)
-
     # Get aggregate data from store
     # TODO(jim): store aggregate data or asynchronous aggregation in worker
+    store = redis.StrictRedis.from_url(MYREDIS_URL)
     members = store.smembers(HACK_NAME)
     member_data = store.mget(members) if members else []
     aggregate_data = '[' + ','.join(member_data) + ']'
     
     return Response(aggregate_data, mimetype='application/json') 
+
 
 @app.route('/thanks')
 def thanks():
@@ -96,10 +99,14 @@ def thanks():
                            message='Thank you for sharing your likes,\
 listens, watches and runs with the %s hackers.' % HACK_NAME)
 
-@app.route('/delete')
+
+@app.route('/delete', methods=['GET','POST'])
 def delete():
 
-    if 'password' not in request.args or request.args['password'] != PASSWORD:
+    if request.method == 'GET':
+        return render_template('delete.html', hack_name=HACK_NAME)
+
+    if 'password' not in request.form or request.form['password'] != PASSWORD:
         return render_template('message.html', title='Error', 
                                message='Missing or invalid password')
                                
@@ -111,8 +118,8 @@ def delete():
     store.delete(HACK_NAME)
 
     return render_template('message.html', title='Deleted',
-                           message='%s data deleted from store' % HACK_NAME)
-    
+                           message='%s data deleted' % HACK_NAME)
+
 
 @facebook.tokengetter
 def get_facebook_oauth_token():
