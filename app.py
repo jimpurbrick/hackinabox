@@ -78,8 +78,9 @@ def ingress(resp):
     store.sadd(HACK_NAME, me.data['id'])
     store.set(me.data['id'], json.dumps(me.data))
 
-    return render_template('message.html', title='Thanks', 
-                               message='Thank you for sharing your data')
+    return render_template('message.html', title='Thanks',
+                           message='Thank you for sharing your likes, \
+listens, watches and runs with the %s hackers.' % HACK_NAME)
 
 @app.route('/egress')
 def egress():
@@ -91,13 +92,6 @@ def egress():
     aggregate_data = '[' + ','.join(member_data) + ']'
     
     return Response(aggregate_data, mimetype='application/json') 
-
-
-@app.route('/thanks')
-def thanks():
-    return render_template('message.html', title='Thanks',
-                           message='Thank you for sharing your likes,\
-listens, watches and runs with the %s hackers.' % HACK_NAME)
 
 
 @app.route('/delete')
