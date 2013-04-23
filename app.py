@@ -13,7 +13,7 @@ FACEBOOK_APP_SECRET = os.environ['FACEBOOK_APP_SECRET']
 HACK_NAME = os.environ['HACK_NAME']
 MYREDIS_URL = os.environ['MYREDIS_URL']
 SECRET_KEY = os.environ['SECRET_KEY']
-PASSWORD = os.environ['PASSWORD']
+ADMIN_ID = os.environ['ADMIN_ID']
 
 app = Flask(__name__)
 Bootstrap(app)
@@ -38,22 +38,22 @@ facebook = oauth.remote_app('facebook',
 def index():
     return redirect(url_for('tos'))
 
+
+def check_box(name, request):
+    return name in request.form and request.form[name] == 'on'
+
+
 @app.route('/tos', methods=['GET', 'POST'])
 def tos():
 
     if request.method == 'GET':
         return render_template('tos.html', hack_name=HACK_NAME)
 
-    ingress = 'ingress' in request.form and request.form['ingress'] == 'on'
-    egress = 'egress' in request.form and request.form['egress'] == 'on'
-    if ingress:
-        if egress:
-            next = url_for('egress', _external=True)
-        else:
-            next = url_for('thanks', _external=True)
-        return facebook.authorize(callback=url_for('ingress',
-                                                   next=next, _external=True))
-    elif egress:
+    if check_box('delete', request):
+        return facebook.authorize(callback=url_for('delete', _external=True))
+    elif check_box('ingress', request):
+        return facebook.authorize(callback=url_for('ingress', _external=True))
+    elif check_box('egress', request):
         return redirect(url_for('egress'))
     else:
         return redirect(url_for('index'))
@@ -63,6 +63,7 @@ def tos():
 @facebook.authorized_handler
 def ingress(resp):
 
+    # Check response from facebook auth
     if resp is None:
         return render_template('message.html', title='Error', 
                                message=request.args['error_message'])
@@ -73,7 +74,6 @@ def ingress(resp):
         'me/?fields=name,likes,music.listens,video.watches,fitness.runs')
 
     # Add user data to store
-    # TODO(jim): asynchronous ingress in worker
     store = redis.StrictRedis.from_url(MYREDIS_URL)
     store.sadd(HACK_NAME, me.data['id'])
     store.set(me.data['id'], json.dumps(me.data))
@@ -84,7 +84,6 @@ def ingress(resp):
 def egress():
 
     # Get aggregate data from store
-    # TODO(jim): store aggregate data or asynchronous aggregation in worker
     store = redis.StrictRedis.from_url(MYREDIS_URL)
     members = store.smembers(HACK_NAME)
     member_data = store.mget(members) if members else []
@@ -100,18 +99,25 @@ def thanks():
 listens, watches and runs with the %s hackers.' % HACK_NAME)
 
 
-@app.route('/delete', methods=['GET','POST'])
-def delete():
+@app.route('/delete')
+@facebook.authorized_handler
+def delete(resp):
 
-    if request.method == 'GET':
-        return render_template('delete.html', hack_name=HACK_NAME)
+    # Check response from facebook auth
+    if resp is None:
+        return render_template('message.html', title='Error', 
+                               message=request.args['error_message'])
 
-    if 'password' not in request.form or request.form['password'] != PASSWORD:
+    # Get data from facebook
+    session['oauth_token'] = (resp['access_token'], '')
+    me = facebook.get('me/?fields=id')
+
+    # Check id
+    if me.data['id'] != ADMIN_ID:
         return render_template('message.html', title='Error', 
                                message='Missing or invalid password')
-                               
-    # Get aggregate data from store
-    # TODO(jim): store aggregate data or asynchronous aggregation in worker
+
+    # Delete data
     store = redis.StrictRedis.from_url(MYREDIS_URL)
     members = store.smembers(HACK_NAME)
     store.delete(members)

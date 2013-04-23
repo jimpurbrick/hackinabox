@@ -6,6 +6,7 @@
     <h2 class="form-signin-heading">{{ hack_name }} Hackinabox</h2>
     <label class="checkbox"><input type="checkbox" class="input-block-level" name="ingress">Share your likes, listens, watches and runs with the {{ hack_name }} hackers (By checking this box you agree to let the other {{ hack_name }} hackers use your data for the duration of the {{ hack_name }} hack)</label>
     <label class="checkbox"><input type="checkbox" class="input-block-level" name="egress">Download the data shared by {{ hack_name }} hackers (By checking this box you agree to only use the dataset in your {{ hack_name }} hack and delete all copies of the dataset at the end of the hack)</label>
+    <label class="checkbox"><input type="checkbox" class="input-block-level" name="delete">Delete the {{ hack_name }} shared data (Administrators only)</label>
     <button type="submit" class="btn btn-large btn-primary">I agree</button>
     <input type="hidden" name="_csrf_token" value="{{ csrf_token() }}">
   </form>
