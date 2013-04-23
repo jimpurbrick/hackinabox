@@ -78,7 +78,8 @@ def ingress(resp):
     store.sadd(HACK_NAME, me.data['id'])
     store.set(me.data['id'], json.dumps(me.data))
 
-    return redirect(request.args['next'])
+    return render_template('message.html', title='Thanks', 
+                               message='Thank you for sharing your data')
 
 @app.route('/egress')
 def egress():
