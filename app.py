@@ -116,7 +116,7 @@ def delete(resp):
     # Check id
     if me.data['id'] != ADMIN_ID:
         return render_template('message.html', title='Error', 
-                               message='Missing or invalid password')
+                               message='Unauthorized')
 
     # Delete data
     store = redis.StrictRedis.from_url(MYREDIS_URL)
