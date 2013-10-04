@@ -11,7 +11,7 @@ DEBUG = True if 'DEBUG' in os.environ else False
 FACEBOOK_APP_ID = os.environ['FACEBOOK_APP_ID']
 FACEBOOK_APP_SECRET = os.environ['FACEBOOK_APP_SECRET']
 HACK_NAME = os.environ['HACK_NAME']
-MYREDIS_URL = os.environ['MYREDIS_URL']
+REDISCLOUD_URL = os.environ['REDISCLOUD_URL']
 SECRET_KEY = os.environ['SECRET_KEY']
 ADMIN_ID = os.environ['ADMIN_ID']
 
@@ -74,7 +74,7 @@ def ingress(resp):
         'me/?fields=name,likes,music.listens,video.watches,fitness.runs')
 
     # Add user data to store
-    store = redis.StrictRedis.from_url(MYREDIS_URL)
+    store = redis.StrictRedis.from_url(REDISCLOUD_URL)
     store.sadd(HACK_NAME, me.data['id'])
     store.set(me.data['id'], json.dumps(me.data))
 
@@ -86,7 +86,7 @@ listens, watches and runs with the %s hackers.' % HACK_NAME)
 def egress():
 
     # Get aggregate data from store
-    store = redis.StrictRedis.from_url(MYREDIS_URL)
+    store = redis.StrictRedis.from_url(REDISCLOUD_URL)
     members = store.smembers(HACK_NAME)
     member_data = store.mget(members) if members else []
     aggregate_data = '[' + ','.join(member_data) + ']'
@@ -113,7 +113,7 @@ def delete(resp):
                                message='Unauthorized')
 
     # Delete data
-    store = redis.StrictRedis.from_url(MYREDIS_URL)
+    store = redis.StrictRedis.from_url(REDISCLOUD_URL)
     members = store.smembers(HACK_NAME)
     store.delete(members)
     store.delete(HACK_NAME)
